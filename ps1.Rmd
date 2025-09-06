@@ -233,12 +233,15 @@ students_demographics %>% left_join(student_grades, by = "student_id")
 ```
 ```{r}
 # Your code for advanced mutate after left join
-student_demographics %>% group_by(student_id, student_name) %>% mutate(average_grade_score = mean(grade_score, na.rm = TRUE))
+students_demographics %>% left_join(student_grades, by = "student_id") %>% group_by(student_id, student_name) %>% mutate(average_grade_score = mean(grade_score, na.rm = TRUE))
 ```
 
 ### Short Answer
 Compare the number of rows and the content of the `inner_join()` and `left_join()` results. Specifically, identify which student(s) are present in one join but not the other, and explain why. What does the average grade calculation reveal about students with multiple grades or no grades?
 
+Inner join has 5 rows and left join has 7 rows. Inner join has two fewer rows because its only keeps rows with a match in both data frames. S005, Eve and S007, Frank do not match in both data sets, hence why they're excluded by the inner_join. left_join retains Eve and Frank from the first (left) data frame and displays their null values from the second (right) data frame. 
+
+A student like Alice, with two courses, satisfies the average_grade_score calculation and gets a true mean associated to her rows. Bob, David, and Charlie only have one class. Their average_grade_score is equivalent to their grade_score. Students like Eve and Frank without grades receive a NaN, since all of their associated scores are NA. 
 ---
 
 ### Task 2.3: Filtering Joins: Identifying Student Enrollment Status
@@ -251,14 +254,20 @@ This task focuses on using filtering joins to identify different categories of s
 
 ```{r}
 # Your code for question 1 (semi_join)
+students_demographics %>% semi_join(student_grades, by = "student_id")
+```
 ```{r}
 # Your code for question 2 (anti_join on students_demographics)
+students_demographics %>% anti_join(student_grades, by = "student_id")
+```
 ```{r}
 # Your code for question 3 (anti_join on student_grades)
+student_grades %>% anti_join(students_demographics, by = "student_id")
 ```
 
 ### Short Answer
 Describe the distinct insights gained from each of the three filtering joins in this task. How do these joins help in data validation and understanding the completeness of your student records?
 
+The join functions specifically filter for matches and mismatches. Anti_join catches Eve and Frank not fitting in between the two data frames. semi_join lists all students who match between the two data frames. When we preformed an anti_join on student_grades by student_id we caught the mismatch of the student ID that did not exist in student_demographics, which is otherwise invisible if we run the function with student_demographics as our first data frame. 
 
 

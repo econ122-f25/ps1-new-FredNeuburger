@@ -390,7 +390,22 @@ product_sales_long
 
 ``` r
 # Your code here
+product_sales_long %>% group_by(product) %>% arrange(product, Year) %>% mutate(growth_rate = (Sales - lag(Sales)) / lag(Sales) * 100)
 ```
+
+    ## # A tibble: 9 × 4
+    ## # Groups:   product [3]
+    ##   product   Year Sales growth_rate
+    ##   <chr>    <dbl> <dbl>       <dbl>
+    ## 1 Keyboard  2020   800       NA   
+    ## 2 Keyboard  2021   850        6.25
+    ## 3 Keyboard  2022   900        5.88
+    ## 4 Laptop    2020  1000       NA   
+    ## 5 Laptop    2021  1100       10   
+    ## 6 Laptop    2022  1250       13.6 
+    ## 7 Monitor   2020   500       NA   
+    ## 8 Monitor   2021   550       10   
+    ## 9 Monitor   2022   600        9.09
 
 ### Short Answer
 
@@ -399,7 +414,7 @@ the wide format versus the long format. Which approach is more concise
 and scalable if you had many more years of data? Why is the long format
 generally preferred for this type of time-series calculation?
 
-------------------------------------------------------------------------
+## Long Format is significantly more readable and usable for a large data set. I didn’t need to write X number of mutation functions year by year. If we had 100 years of data that would’ve taken ages. Long-format makes this analysis much easier.
 
 ### Task 2.2: Mutating Joins: Student Demographics and Grades
 
@@ -421,15 +436,51 @@ handle students who may or may not have corresponding grade records.
 
 ``` r
 # Your code for inner_join and its explanation
+students_demographics %>% inner_join(student_grades, by = "student_id")
 ```
+
+    ## # A tibble: 5 × 7
+    ##   student_id student_name major   enrollment_year course_id semester grade_score
+    ##   <chr>      <chr>        <chr>             <dbl> <chr>     <chr>          <dbl>
+    ## 1 S001       Alice        CS                 2020 CS101     Fall 20…          92
+    ## 2 S001       Alice        CS                 2020 CS102     Spring …          78
+    ## 3 S002       Bob          Math               2021 MA201     Spring …          85
+    ## 4 S003       Charlie      Physics            2020 PH301     Fall 20…          88
+    ## 5 S004       David        CS                 2022 CS205     Spring …          90
 
 ``` r
 # Your code for left_join and its explanation
+students_demographics %>% left_join(student_grades, by = "student_id")
 ```
+
+    ## # A tibble: 7 × 7
+    ##   student_id student_name major   enrollment_year course_id semester grade_score
+    ##   <chr>      <chr>        <chr>             <dbl> <chr>     <chr>          <dbl>
+    ## 1 S001       Alice        CS                 2020 CS101     Fall 20…          92
+    ## 2 S001       Alice        CS                 2020 CS102     Spring …          78
+    ## 3 S002       Bob          Math               2021 MA201     Spring …          85
+    ## 4 S003       Charlie      Physics            2020 PH301     Fall 20…          88
+    ## 5 S004       David        CS                 2022 CS205     Spring …          90
+    ## 6 S005       Eve          Biology            2021 <NA>      <NA>              NA
+    ## 7 S007       Frank        History            2023 <NA>      <NA>              NA
 
 ``` r
 # Your code for advanced mutate after left join
+students_demographics %>% left_join(student_grades, by = "student_id") %>% group_by(student_id, student_name) %>% mutate(average_grade_score = mean(grade_score, na.rm = TRUE))
 ```
+
+    ## # A tibble: 7 × 8
+    ## # Groups:   student_id, student_name [6]
+    ##   student_id student_name major   enrollment_year course_id semester grade_score
+    ##   <chr>      <chr>        <chr>             <dbl> <chr>     <chr>          <dbl>
+    ## 1 S001       Alice        CS                 2020 CS101     Fall 20…          92
+    ## 2 S001       Alice        CS                 2020 CS102     Spring …          78
+    ## 3 S002       Bob          Math               2021 MA201     Spring …          85
+    ## 4 S003       Charlie      Physics            2020 PH301     Fall 20…          88
+    ## 5 S004       David        CS                 2022 CS205     Spring …          90
+    ## 6 S005       Eve          Biology            2021 <NA>      <NA>              NA
+    ## 7 S007       Frank        History            2023 <NA>      <NA>              NA
+    ## # ℹ 1 more variable: average_grade_score <dbl>
 
 ### Short Answer
 
@@ -439,7 +490,14 @@ present in one join but not the other, and explain why. What does the
 average grade calculation reveal about students with multiple grades or
 no grades?
 
-------------------------------------------------------------------------
+Inner join has 5 rows and left join has 7 rows. Inner join has two fewer
+rows because its only keeps rows with a match in both data frames. S005,
+Eve and S007, Frank do not match in both data sets, hence why they’re
+excluded by the inner_join. left_join retains Eve and Frank from the
+first (left) data frame and displays their null values from the second
+(right) data frame.
+
+## A student like Alice, with two courses, satisfies the average_grade_score calculation and gets a true mean associated to her rows. Bob, David, and Charlie only have one class. Their average_grade_score is equivalent to their grade_score. Students like Eve and Frank without grades receive a NaN, since all of their associated scores are NA.
 
 ### Task 2.3: Filtering Joins: Identifying Student Enrollment Status
 
@@ -463,18 +521,48 @@ categories of students based on their enrollment and grade records.
 
 ``` r
 # Your code for question 1 (semi_join)
+students_demographics %>% semi_join(student_grades, by = "student_id")
 ```
+
+    ## # A tibble: 4 × 4
+    ##   student_id student_name major   enrollment_year
+    ##   <chr>      <chr>        <chr>             <dbl>
+    ## 1 S001       Alice        CS                 2020
+    ## 2 S002       Bob          Math               2021
+    ## 3 S003       Charlie      Physics            2020
+    ## 4 S004       David        CS                 2022
 
 ``` r
 # Your code for question 2 (anti_join on students_demographics)
+students_demographics %>% anti_join(student_grades, by = "student_id")
 ```
+
+    ## # A tibble: 2 × 4
+    ##   student_id student_name major   enrollment_year
+    ##   <chr>      <chr>        <chr>             <dbl>
+    ## 1 S005       Eve          Biology            2021
+    ## 2 S007       Frank        History            2023
 
 ``` r
 # Your code for question 3 (anti_join on student_grades)
+student_grades %>% anti_join(students_demographics, by = "student_id")
 ```
+
+    ## # A tibble: 1 × 4
+    ##   student_id course_id semester  grade_score
+    ##   <chr>      <chr>     <chr>           <dbl>
+    ## 1 S006       BI101     Fall 2021          75
 
 ### Short Answer
 
 Describe the distinct insights gained from each of the three filtering
 joins in this task. How do these joins help in data validation and
 understanding the completeness of your student records?
+
+The join functions specifically filter for matches and mismatches.
+Anti_join catches Eve and Frank not fitting in between the two data
+frames. semi_join lists all students who match between the two data
+frames. When we preformed an anti_join on student_grades by student_id
+we caught the mismatch of the student ID that did not exist in
+student_demographics, which is otherwise invisible if we run the
+function with student_demographics as our first data frame.
